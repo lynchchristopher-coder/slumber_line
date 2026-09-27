@@ -2,14 +2,13 @@
 
 A train ride from a passenger's seat, made for relaxing and falling asleep. You watch made-up scenery roll past the window and hear the rhythm of the rails. Overlays show speed, a route map, weather and temperature, and details of the train. Each overlay can be turned off.
 
-This is a standalone web app, separate from Coda. It needs no build step, has no dependencies and downloads no assets.
+Slumber Line is a standalone web app. It needs no build step, has no dependencies and downloads no assets.
 
 ## Run it
 
-Serve this folder with any static server and open it in a browser:
+Serve the repository root with any static server and open it in a browser:
 
 ```sh
-cd train
 python3 -m http.server 8000     # then open http://localhost:8000
 # or: npx serve .
 ```
