@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d14" />
+    <meta name="description" content="A slow, made-up train ride for relaxing and falling asleep." />
+    <title>Slumber Line</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="The view from a train window"></canvas>
+
+    <div id="hud" aria-live="off">
+      <section id="hud-train" class="panel off">
+        <div class="kicker" id="tr-op"></div>
+        <h2 id="tr-name"></h2>
+        <div id="tr-seat" class="muted"></div>
+        <div class="rule"></div>
+        <div id="tr-next" class="strong"></div>
+        <div id="tr-eta" class="muted"></div>
+        <div class="rule"></div>
+        <div id="tr-loco" class="small"></div>
+        <div id="tr-consist" class="small muted"></div>
+        <div id="tr-trip" class="small muted"></div>
+      </section>
+
+      <section id="hud-weather" class="panel off">
+        <div class="wx">
+          <div id="wx-icon" class="wx-icon"></div>
+          <div>
+            <div id="wx-temp" class="big"></div>
+            <div id="wx-desc"></div>
+          </div>
+        </div>
+        <div id="wx-more" class="small muted wx"></div>
+        <div class="clock">
+          <span id="clock-scene" class="strong"></span>
+          <span id="clock-local" class="small muted"></span>
+        </div>
+      </section>
+
+      <section id="hud-speed" class="panel off">
+        <div class="speed"><span id="spd-value">0</span><span id="spd-unit">km/h</span></div>
+        <div class="bar"><i id="spd-bar"></i></div>
+        <div id="spd-sub" class="small muted"></div>
+      </section>
+
+      <section id="hud-map" class="panel off">
+        <canvas id="map" aria-label="Route map"></canvas>
+        <div id="map-foot" class="small muted"></div>
+      </section>
+    </div>
+
+    <div id="toast" role="status"><div class="t1"></div><div class="t2"></div></div>
+
+    <nav id="controls" aria-label="Ride controls">
+      <button data-act="settings" title="Journey settings (S)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg><span>Settings</span></button>
+      <button data-act="view" title="Change seat (V)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M3 20h18M12 4v13" /></svg><span>Seat</span></button>
+      <button data-act="time" title="Time of day (T)"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></svg><span>Time</span></button>
+      <button data-act="weather" title="Weather (W)"><svg viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 1 7z" /><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3" /></svg><span>Weather</span></button>
+      <button data-act="sleep" id="btn-sleep" title="Sleep timer"><svg viewBox="0 0 24 24"><path d="M4 7h5l-5 6h5M13 3h4l-4 5h4" /><circle cx="15.5" cy="15.5" r="5" /><path d="M15.5 13v2.5l1.5 1" /></svg><span>Sleep <em id="sleep-left"></em></span></button>
+      <button data-act="hide" id="btn-hide" title="Hide overlays (H)"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg><span>Overlays</span></button>
+      <button data-act="mute" id="btn-mute" title="Mute (M)"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" /></svg><span>Sound</span></button>
+      <button data-act="postcard" title="Save a postcard (P)"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6l1.5-2h5L16 6" /></svg><span>Postcard</span></button>
+      <button data-act="fullscreen" title="Full screen (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg><span>Full screen</span></button>
+    </nav>
+
+    <aside id="settings" aria-hidden="true" aria-label="Journey settings">
+      <header>
+        <h2>Your journey</h2>
+        <button id="settings-close" aria-label="Close settings">×</button>
+      </header>
+      <div class="scroll">
+        <h3>Route</h3>
+        <p class="hint">Changing route starts a new journey. Every landscape is made up.</p>
+        <div id="set-route"></div>
+        <h3>Time of day</h3>
+        <div id="set-time" class="seg"></div>
+        <h3>Weather</h3>
+        <div id="set-weather" class="seg"></div>
+        <h3>Where you sit</h3>
+        <div id="set-view" class="seg"></div>
+        <h3>Overlays</h3>
+        <p class="hint">Press H to hide them all at once.</p>
+        <div id="set-overlays" class="toggles"></div>
+        <h3>Journey</h3>
+        <div id="set-pace" class="seg"></div>
+        <div id="set-units" class="seg"></div>
+        <div id="set-journey" class="toggles"></div>
+        <h3>Sound</h3>
+        <div id="set-sound"></div>
+        <h3>Sleep timer</h3>
+        <p class="hint">Over the last few minutes the sound fades out and the screen dims to black, then the ride stops to save your battery.</p>
+        <div id="set-sleep" class="seg"></div>
+        <h3>Keys</h3>
+        <dl class="keys">
+          <dt>S</dt><dd>Settings</dd><dt>V</dt><dd>Change seat</dd><dt>T</dt><dd>Time of day</dd><dt>W</dt><dd>Weather</dd>
+          <dt>H</dt><dd>Hide overlays</dd><dt>M</dt><dd>Mute</dd><dt>F</dt><dd>Full screen</dd><dt>P</dt><dd>Save a postcard</dd>
+        </dl>
+        <p class="hint about">All scenery, weather and sound are generated on your device as you ride, so nothing large is downloaded and the ride works offline.</p>
+      </div>
+    </aside>
+
+    <div id="dim"></div>
+    <button id="goodnight" type="button"><span class="gn1">Sleep well</span><span class="gn2">Tap to ride again</span></button>
+
+    <section id="start">
+      <div class="start-inner">
+        <p class="kicker">A train ride for rest and sleep</p>
+        <h1>Slumber Line</h1>
+        <p class="lede">Choose a line, find a seat by the window and let the made-up world roll by. Every overlay can be turned off.</p>
+        <div id="start-routes"></div>
+        <div class="start-row">
+          <div>
+            <h4>Time of day</h4>
+            <div id="start-time" class="seg"></div>
+          </div>
+          <div>
+            <h4>Seat</h4>
+            <div id="start-view" class="seg"></div>
+          </div>
+        </div>
+        <button id="board" type="button">Board the train</button>
+        <p class="hint">Sound on for the rhythm of the rails. Headphones recommended.</p>
+      </div>
+    </section>
+
+    <script src="js/util.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/sky.js"></script>
+    <script src="js/objects.js"></script>
+    <script src="js/scenery.js"></script>
+    <script src="js/interior.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
